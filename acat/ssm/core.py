@@ -1,16 +1,11 @@
-import logging
-
 import boto3
 import click
+from loguru import logger
 
 from .types import Parameter
 from .utils import get_current_params
 from .utils import get_ssm_parameter_names
 from .utils import get_ssm_parameters
-
-MATCH_STR = r"\{\{ ?resolve:ssm:\/\$\{AWS::StackName\}(\/.+) ?\}\}"
-
-logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -41,8 +36,11 @@ def delete_unused(path_preffix: str, template_path: str):
     same parameter store and you want to delete only the parameters that are
     being used by a specific stack.
     """
+    logger.info(f"Deleting unused parameters with path preffix: {path_preffix}")
     current_params = get_current_params(template_path, path_preffix)
+    logger.debug(f"Found {len(current_params)} current parameters")
     ssm_params = get_ssm_parameter_names(path_preffix)
+    logger.debug(f"Found {len(ssm_params)} parameters in SSM")
     to_delete = ssm_params - current_params
 
     if len(to_delete) == 0:
@@ -85,10 +83,13 @@ def copy(source: str, destination: str, overwrite: bool):
     destination path. If the destination path already exists, it will be
     overwritten depending on the value of the `overwrite` flag.
     """
+    logger.info(f"Copying parameters from {source} to {destination}")
     client = boto3.client("ssm")
 
     source_params = get_ssm_parameters(source)
+    logger.debug(f"Found {len(source_params)} parameters in {source}")
     dest_param_names = get_ssm_parameter_names(destination)
+    logger.debug(f"Found {len(dest_param_names)} parameters in {destination}")
     new_params: list[Parameter] = []
 
     for parameter in source_params:
@@ -97,6 +98,7 @@ def copy(source: str, destination: str, overwrite: bool):
         if new_name in dest_param_names and not overwrite:
             logger.debug(f"Parameter {new_name} already exists, skipping")
             continue
+
         new_params.append(
             {"Name": new_name, "Value": parameter["Value"], "Type": parameter["Type"]}
         )

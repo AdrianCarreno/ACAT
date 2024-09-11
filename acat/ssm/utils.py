@@ -1,19 +1,21 @@
-import logging
 import re
 from typing import Sequence
 from typing import Set
 
 import boto3
+from loguru import logger
 from mypy_boto3_ssm import SSMClient
 from mypy_boto3_ssm.type_defs import ParameterStringFilterTypeDef
 
 from .types import Parameter
 
 MATCH_STR = r"\{\{ ?resolve:ssm:\/\$\{AWS::StackName\}(\/.+) ?\}\+?\}"
-logger = logging.getLogger(__name__)
 
 
 def get_current_params(template_path: str, path_preffix: str) -> Set[str]:
+    logger.info(f"Reading SSM parameters used in template file: {template_path}")
+    logger.debug(f"Path preffix: {path_preffix}")
+    logger.debug(f"Match string: {MATCH_STR}")
     current_params = set()
 
     with open(template_path, "r") as f:
@@ -32,33 +34,40 @@ def get_current_params(template_path: str, path_preffix: str) -> Set[str]:
 
 
 def get_ssm_parameter_names(path_preffix: str) -> set[str]:
+    logger.info(f"Getting SSM parameters with path preffix: {path_preffix}")
     client: SSMClient = boto3.client("ssm")
     parameters = set()
     parameter_filters: Sequence[ParameterStringFilterTypeDef] = [
         {"Key": "Name", "Option": "BeginsWith", "Values": [path_preffix]}
     ]
+    i = 1
     response = client.describe_parameters(ParameterFilters=parameter_filters)
 
     while "NextToken" in response:
+        logger.debug(f"Getting parameters page {i:02d}")
         parameters.update(
             {param["Name"] for param in response["Parameters"] if "Name" in param}
         )
         response = client.describe_parameters(
             ParameterFilters=parameter_filters, NextToken=response["NextToken"]
         )
+        i += 1
 
     return parameters
 
 
 def get_ssm_parameters(path_preffix: str) -> list[Parameter]:
+    logger.info(f"Getting SSM parameters with path preffix: {path_preffix}")
     client: SSMClient = boto3.client("ssm")
     parameter_filters: Sequence[ParameterStringFilterTypeDef] = [
         {"Key": "Name", "Option": "BeginsWith", "Values": [path_preffix]}
     ]
     response = client.describe_parameters(ParameterFilters=parameter_filters)
     parameters: list[Parameter] = []
+    i = 1
 
     while "NextToken" in response:
+        logger.debug(f"Getting parameters page {i:02d}")
         for param in response["Parameters"]:
             if "Name" not in param:
                 logger.warning(f"Parameter {param} does not have a name")
@@ -84,5 +93,6 @@ def get_ssm_parameters(path_preffix: str) -> list[Parameter]:
         response = client.describe_parameters(
             ParameterFilters=parameter_filters, NextToken=response["NextToken"]
         )
+        i += 1
 
     return parameters
