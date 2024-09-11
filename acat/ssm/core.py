@@ -54,13 +54,14 @@ def delete_unused(path_preffix: str, template_path: str):
 
     proceed = click.prompt(f"Delete {len(to_delete)} parameters? (y/[n])", default="n")
 
-    if proceed.lower() == "y":
-        client = boto3.client("ssm")
-
-        for param in sorted(to_delete):
-            logger.debug(f"Deleting parameter: {param}")
-            client.delete_parameter(Name=param)
-
-        click.echo("Deleted all unused parameters")
-    else:
+    if proceed.lower() != "y":
         click.echo("Aborted")
+        exit(1)
+
+    client = boto3.client("ssm")
+
+    for param in sorted(to_delete):
+        click.echo(f"Deleting parameter: {param}")
+        client.delete_parameter(Name=param)
+
+    click.echo("Deleted all unused parameters")
