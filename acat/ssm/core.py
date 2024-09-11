@@ -23,6 +23,7 @@ def ssm():
     "--template-path",
     "-t",
     default="template.yaml",
+    show_default=True,
     help="Path to the CloudFormation or SAM template file",
 )
 def delete_unused(path_preffix: str, template_path: str):
