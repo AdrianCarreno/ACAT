@@ -28,7 +28,7 @@ ruff = "^0.6.2"
 optional = true
 
 [tool.poetry.group.test.dependencies]
-moto = "^5.0.13"
+moto = {extras = ["ssm"], version = "^5.0.14"}
 pytest = "^8.3.2"
 pytest-cov = "^5.0.0"
 
