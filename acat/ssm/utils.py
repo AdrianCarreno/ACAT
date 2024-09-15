@@ -40,21 +40,26 @@ def get_current_params(template_path: str, path_preffix: str) -> Set[str]:
 def get_ssm_parameter_names(path_preffix: str) -> set[str]:
     logger.info(f"Getting SSM parameters with path preffix: {path_preffix}")
     client: SSMClient = boto3.client("ssm")
-    parameters = set()
     parameter_filters: Sequence[ParameterStringFilterTypeDef] = [
         {"Key": "Name", "Option": "BeginsWith", "Values": [path_preffix]}
     ]
     i = 1
-    response = client.describe_parameters(ParameterFilters=parameter_filters)
+    parameters: set[str] = set()
 
-    while "NextToken" in response:
+    while True:
         logger.debug(f"Getting parameters page {i:02d}")
-        parameters.update(
-            {param["Name"] for param in response["Parameters"] if "Name" in param}
-        )
-        response = client.describe_parameters(
-            ParameterFilters=parameter_filters, NextToken=response["NextToken"]
-        )
+        args = {"ParameterFilters": parameter_filters}
+
+        if i > 1:
+            # If it's not the first page, there is a response and a `NextToken`
+            args["NextToken"] = response["NextToken"]  # type: ignore # noqa F821
+
+        response = client.describe_parameters(**args)  # type: ignore
+        parameters.update({param.get("Name", "") for param in response["Parameters"]})
+
+        if "NextToken" not in response:
+            break
+
         i += 1
 
     return parameters
