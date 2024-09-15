@@ -1,13 +1,12 @@
 import os
-import sys
 
 import click
-from loguru import logger
+from loguru import logger  # noqa F401
 
 from acat.ssm.core import ssm
 
-logger.remove()
-logger.add(sys.stderr, level=os.getenv("LOGURU_LEVEL", "WARNING"))
+# Change default LOGURU_LEVEL to WARNING if it is not set
+os.environ.setdefault("LOGURU_LEVEL", "WARNING")
 
 
 @click.group()
