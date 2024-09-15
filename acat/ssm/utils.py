@@ -14,6 +14,10 @@ MATCH_STR = r"\{\{ ?resolve:ssm:\/\$\{AWS::StackName\}(\/.+) ?\}\+?\}"
 
 def get_current_params(template_path: str, path_preffix: str) -> Set[str]:
     logger.info(f"Reading SSM parameters used in template file: {template_path}")
+
+    if not re.search(r"\.ya?ml$", template_path):
+        raise ValueError("Template file must have .yaml or .yml extension")
+
     logger.debug(f"Path preffix: {path_preffix}")
     logger.debug(f"Match string: {MATCH_STR}")
     current_params = set()
