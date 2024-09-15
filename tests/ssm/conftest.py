@@ -1,4 +1,5 @@
 import tempfile
+from textwrap import dedent
 from typing import Generator
 
 import boto3
@@ -27,15 +28,16 @@ def mock_ssm() -> Generator[SSMClient, None, None]:
 @pytest.fixture
 def template_file() -> Generator[str, None, None]:
     with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w") as f:
-        content = """
+        content = dedent("""\
             AWSTemplateFormatVersion: '2010-09-09'
             Resources:
                 S3PermanentBucket:
                     Type: AWS::S3::Bucket
                     Properties:
-                    BucketName: !Sub '{{resolve:ssm:/path/to/param1}}'
-            """
+                    BucketName: !Sub '{{resolve:ssm:/${AWS::StackName}/source/param1}}'
+            """)
         f.write(content)
+        f.flush()
         yield f.name
 
 

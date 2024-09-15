@@ -1,11 +1,14 @@
 import pytest
 
 from acat.ssm.utils import get_current_params
+from acat.ssm.utils import get_ssm_parameter_names
 
 
 class TestGetCurrentParams:
     def test_success(self, template_file: str, path_preffix="/test1"):
         params = get_current_params(template_file, path_preffix)
+
+        assert len(params) != 0
 
         for param in params:
             assert param.startswith(path_preffix)
