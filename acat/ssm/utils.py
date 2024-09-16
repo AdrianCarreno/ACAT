@@ -56,11 +56,10 @@ def get_ssm_parameter_names(path_preffix: str) -> set[str]:
 
         response = client.describe_parameters(**args)  # type: ignore
         parameters.update({param.get("Name", "") for param in response["Parameters"]})
+        i += 1
 
         if "NextToken" not in response:
             break
-
-        i += 1
 
     return parameters
 
