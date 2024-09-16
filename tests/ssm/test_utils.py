@@ -58,7 +58,7 @@ class TestGetSsmParameterNames:
 
 
 class TestGetSsmParameters:
-    def test_success(self, path_preffix="/test2"):
+    def test_success(self, path_preffix="/test3"):
         params = get_ssm_parameters(path_preffix)
 
         assert len(params) != 0

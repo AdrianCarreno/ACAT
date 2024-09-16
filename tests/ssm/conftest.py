@@ -22,6 +22,11 @@ def mock_ssm() -> Generator[SSMClient, None, None]:
         for name, value in PARAMETERS.items():
             client.put_parameter(Name=name, Value=value, Type="String")
 
+        for i in range(100):
+            client.put_parameter(
+                Name=f"/test3/source/param{i}", Value=f"value{i}", Type="String"
+            )
+
         yield client
 
 
