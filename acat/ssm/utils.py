@@ -38,7 +38,7 @@ def get_current_params(template_path: str, path_preffix: str) -> Set[str]:
 
 
 def get_ssm_parameter_names(path_preffix: str) -> set[str]:
-    logger.info(f"Getting SSM parameters with path preffix: {path_preffix}")
+    logger.info(f"Getting SSM parameter names with path preffix: {path_preffix}")
     client: SSMClient = boto3.client("ssm")
     parameter_filters: Sequence[ParameterStringFilterTypeDef] = [
         {"Key": "Name", "Option": "BeginsWith", "Values": [path_preffix]}
