@@ -67,40 +67,23 @@ def get_ssm_parameter_names(path_preffix: str) -> set[str]:
 def get_ssm_parameters(path_preffix: str) -> list[Parameter]:
     logger.info(f"Getting SSM parameters with path preffix: {path_preffix}")
     client: SSMClient = boto3.client("ssm")
-    parameter_filters: Sequence[ParameterStringFilterTypeDef] = [
-        {"Key": "Name", "Option": "BeginsWith", "Values": [path_preffix]}
-    ]
-    response = client.describe_parameters(ParameterFilters=parameter_filters)
+    parameter_names = get_ssm_parameter_names(path_preffix)
     parameters: list[Parameter] = []
-    i = 1
 
-    while "NextToken" in response:
-        logger.debug(f"Getting parameters page {i:02d}")
-        for param in response["Parameters"]:
-            if "Name" not in param:
-                logger.warning(f"Parameter {param} does not have a name")
-                continue
-
-            full_param = client.get_parameter(Name=param["Name"])["Parameter"]
-            if (
-                "Name" not in full_param
-                or "Value" not in full_param
-                or "Type" not in full_param
-            ):
-                logger.warning(
-                    f"Parameter {full_param} does not have all required fields"
-                )
-                continue
-            parameters.append(
-                {
-                    "Name": full_param["Name"],
-                    "Value": full_param["Value"],
-                    "Type": full_param["Type"],
-                }
-            )
-        response = client.describe_parameters(
-            ParameterFilters=parameter_filters, NextToken=response["NextToken"]
-        )
-        i += 1
+    for name in parameter_names:
+        full_param = client.get_parameter(Name=name)["Parameter"]
+        if (
+            "Name" not in full_param
+            or "Value" not in full_param
+            or "Type" not in full_param
+        ):  # pragma: no cover
+            logger.warning(f"Parameter {full_param} does not have all required fields")
+            continue
+        parameter: Parameter = {
+            "Name": full_param["Name"],
+            "Value": full_param["Value"],
+            "Type": full_param["Type"],
+        }
+        parameters.append(parameter)
 
     return parameters

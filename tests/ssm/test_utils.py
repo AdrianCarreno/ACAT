@@ -2,6 +2,7 @@ import pytest
 
 from acat.ssm.utils import get_current_params
 from acat.ssm.utils import get_ssm_parameter_names
+from acat.ssm.utils import get_ssm_parameters
 
 
 class TestGetCurrentParams:
@@ -54,3 +55,24 @@ class TestGetSsmParameterNames:
             get_ssm_parameter_names()  # type:ignore
 
         assert str(exc_info.value) == "get_ssm_parameter_names() missing 1 required positional argument: 'path_preffix'"  # noqa E501 # fmt: skip
+
+
+class TestGetSsmParameters:
+    def test_success(self, path_preffix="/test2"):
+        params = get_ssm_parameters(path_preffix)
+
+        assert len(params) != 0
+
+        for param in params:
+            assert param["Name"].startswith(path_preffix)
+
+    def test_success_no_parameters(self, path_preffix="/no_path"):
+        params = get_ssm_parameters(path_preffix)
+
+        assert len(params) == 0
+
+    def test_fail_without_path_preffix(self):
+        with pytest.raises(TypeError) as exc_info:
+            get_ssm_parameters()  # type:ignore
+
+        assert str(exc_info.value) == "get_ssm_parameters() missing 1 required positional argument: 'path_preffix'"  # noqa E501 # fmt: skip
