@@ -22,7 +22,7 @@ class TestDeleteUnused:
             delete_unused, ["/no-path", "-t", template_file], input="y\n"
         )
 
-        assert "No parameters to delete" in result.output
+        assert result.output == "No parameters to delete\n"
 
     def test_success_aborted(self, template_file: str):
         runner = CliRunner()
