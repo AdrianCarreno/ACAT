@@ -4,6 +4,7 @@ from typing import Generator
 
 import boto3
 import pytest
+from click.testing import CliRunner
 from moto import mock_aws
 from mypy_boto3_ssm import SSMClient
 
@@ -58,3 +59,8 @@ def template_file_invalid_content() -> Generator[str, None, None]:
         content = "This is not a valid CloudFormation template"
         f.write(content)
         yield f.name
+
+
+@pytest.fixture
+def runner():
+    return CliRunner()
