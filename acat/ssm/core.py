@@ -9,7 +9,7 @@ from .utils import get_ssm_parameters
 
 
 @click.group()
-def ssm():
+def ssm():  # pragma: nocover
     """Manage SSM parameters."""
     pass
 
@@ -38,6 +38,11 @@ def delete_unused(path_preffix: str, template_path: str):
     """
     logger.info(f"Deleting unused parameters with path preffix: {path_preffix}")
     current_params = get_current_params(template_path, path_preffix)
+
+    if len(current_params) == 0:
+        click.echo("No parameters found in the template")
+        exit(0)
+
     logger.debug(f"Found {len(current_params)} current parameters")
     ssm_params = get_ssm_parameter_names(path_preffix)
     logger.debug(f"Found {len(ssm_params)} parameters in SSM")
@@ -52,7 +57,7 @@ def delete_unused(path_preffix: str, template_path: str):
     for param in sorted(to_delete):
         click.echo(f"\t{param}")
 
-    proceed = click.prompt(f"Delete {len(to_delete)} parameters? (y/[n])", default="n")
+    proceed: str = click.prompt("Proceed with deletion? (y/[n])", default="n")
 
     if proceed.lower() != "y":
         click.echo("Aborted")
@@ -112,7 +117,7 @@ def copy(source: str, destination: str, overwrite: bool):
     for param in sorted(new_params, key=lambda x: x["Name"]):
         click.echo(f"\t{param['Name']}")
 
-    proceed = click.prompt("Proceed? (y/[n])", default="n")
+    proceed: str = click.prompt("Proceed? (y/[n])", default="n")
 
     if proceed.lower() != "y":
         click.echo("Aborted")
