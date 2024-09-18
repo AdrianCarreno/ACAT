@@ -9,7 +9,7 @@ from .utils import get_ssm_parameters
 
 
 @click.group()
-def ssm():
+def ssm():  # pragma: nocover
     """Manage SSM parameters."""
     pass
 
