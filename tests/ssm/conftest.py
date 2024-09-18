@@ -10,6 +10,7 @@ from mypy_boto3_ssm import SSMClient
 PARAMETERS = {
     "/test1/source/param1": "value1",
     "/test1/source/param2": "value2",
+    "/test2/source/param2": "value3",
     "/test2/source/param3": "value3",
 }
 
