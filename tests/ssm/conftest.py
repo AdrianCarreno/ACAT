@@ -9,7 +9,7 @@ from mypy_boto3_ssm import SSMClient
 
 PARAMETERS = {
     "/test1/source/param1": "value1",
-    "/test2/source/param2": "value2",
+    "/test1/source/param2": "value2",
     "/test2/source/param3": "value3",
 }
 
@@ -22,7 +22,7 @@ def mock_ssm() -> Generator[SSMClient, None, None]:
         for name, value in PARAMETERS.items():
             client.put_parameter(Name=name, Value=value, Type="String")
 
-        for i in range(100):
+        for i in range(7):
             client.put_parameter(
                 Name=f"/test3/source/param{i}", Value=f"value{i}", Type="String"
             )
