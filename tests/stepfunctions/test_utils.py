@@ -106,3 +106,7 @@ class TestValidateDates:
             " start date must be before stop date"
         )
 
+
+class TestGetExecutions:
+    def test_success(self):
+        pass

@@ -4,6 +4,7 @@ import click
 from loguru import logger  # noqa F401
 
 from acat.ssm.core import ssm
+from acat.stepfunctions.core import step_functions
 
 # Change default LOGURU_LEVEL to WARNING if it is not set
 os.environ.setdefault("LOGURU_LEVEL", "WARNING")
@@ -23,3 +24,4 @@ def cli():
 
 
 cli.add_command(ssm)
+cli.add_command(step_functions)
