@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 
+from acat.stepfunctions.utils import get_dates
 from acat.stepfunctions.utils import get_executions
 from acat.stepfunctions.utils import parse_datetime
 from acat.stepfunctions.utils import validate_arn
@@ -46,14 +47,14 @@ class TestValidateDates:
         start_date = now - timedelta(days=13)
         stop_date = now - timedelta(days=1)
 
-        assert validate_dates(start_date, stop_date) == (start_date, stop_date)
+        assert get_dates(start_date, stop_date) == (start_date, stop_date)
 
     def test_success_no_dates(self):
         now = datetime.now(UTC)
         start_date = now - timedelta(days=14)
         stop_date = now
 
-        automatic_start_date, automatic_stop_date = validate_dates()
+        automatic_start_date, automatic_stop_date = get_dates()
         assert automatic_start_date < automatic_stop_date
         assert start_date < automatic_start_date
         assert (automatic_start_date - start_date) < timedelta(milliseconds=1)
@@ -65,7 +66,7 @@ class TestValidateDates:
         start_date = now - timedelta(days=days) + timedelta(seconds=1)
         stop_date = now
 
-        assert validate_dates(start_date, stop_date, days) == (start_date, stop_date)
+        assert get_dates(start_date, stop_date, days) == (start_date, stop_date)
 
     def test_failure_start_date_too_old(self, days_over=1, max_days=14):
         now = datetime.now(UTC)
@@ -73,7 +74,7 @@ class TestValidateDates:
         stop_date = now - timedelta(days=1)
 
         with pytest.raises(ValueError) as exc_info:
-            validate_dates(start_date, stop_date, max_days=max_days)
+            get_dates(start_date, stop_date, max_days=max_days)
 
         assert str(exc_info.value) == (
             f"Start and stop dates must be within the last {max_days} days, and"
@@ -86,7 +87,7 @@ class TestValidateDates:
         stop_date = now + timedelta(days=1)
 
         with pytest.raises(ValueError) as exc_info:
-            validate_dates(start_date, stop_date, max_days=max_days)
+            get_dates(start_date, stop_date, max_days=max_days)
 
         assert str(exc_info.value) == (
             f"Start and stop dates must be within the last {max_days} days, and"
@@ -99,7 +100,7 @@ class TestValidateDates:
         stop_date = now - timedelta(days=1)
 
         with pytest.raises(ValueError) as exc_info:
-            validate_dates(start_date, stop_date)
+            get_dates(start_date, stop_date)
 
         assert str(exc_info.value) == (
             "Start and stop dates must be within the last 14 days, and"
