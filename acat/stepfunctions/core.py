@@ -1,5 +1,12 @@
-import click
+import re
+import time
 
+import boto3
+import click
+from loguru import logger
+from mypy_boto3_stepfunctions import SFNClient
+
+from .utils import EXECUTION_ARN_FORMAT
 from .utils import get_executions
 from .utils import parse_datetime
 from .utils import validate_arn
@@ -22,11 +29,11 @@ def step_functions():  # pragma: nocover
     show_default=True,
 )
 @click.option(
-    "--number",
+    "--batch-size",
     "-n",
-    help="Number of failed executions to redrive at once",
+    help="Number of failed executions to redrive at once. 0 to disable",
     type=int,
-    default=10,
+    default=0,
     show_default=True,
 )
 @click.option(
@@ -48,16 +55,37 @@ def step_functions():  # pragma: nocover
 def redrive(
     arn: str,
     sleep_time: int,
-    number: int,
+    batch_size: int,
     start_date: str | None,
     stop_date: str | None,
 ) -> None:
     """Redrive failed executions in an AWS Step Functions state machine."""
-    if not validate_arn(arn):
-        raise click.UsageError("Invalid ARN")
-
+    validate_arn(arn)
     start = parse_datetime(start_date) if start_date else None
     stop = parse_datetime(stop_date) if stop_date else None
     executions = get_executions(arn, start_date=start, stop_date=stop)
 
-    click.echo(f"Found {len(executions)} executions")
+    if not executions:
+        click.echo(
+            "No redrivable executions found. Executions must be in a failed "
+            "state and no older than 14 days."
+        )
+        exit(0)
+
+    client: SFNClient = boto3.client("stepfunctions")
+
+    for n, execution in enumerate(executions):
+        if batch_size != 0 and n + 1 % batch_size == 0:
+            click.echo(f"Sleeping for {sleep_time} seconds...")
+            time.sleep(sleep_time)
+        arn = execution["executionArn"]
+        arn_match = re.match(EXECUTION_ARN_FORMAT, arn)
+
+        if not arn_match:
+            logger.error(f"Could not parse ARN: {arn}")
+            exec_id = "N/A"
+        else:
+            exec_id = arn_match.group("id")
+
+        click.echo(f"Redriving execution {exec_id}")
+        client.redrive_execution(executionArn=arn)

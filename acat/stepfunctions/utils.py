@@ -8,12 +8,15 @@ from loguru import logger
 from mypy_boto3_stepfunctions import SFNClient
 from mypy_boto3_stepfunctions.type_defs import ExecutionListItemTypeDef
 
-ARN_FORMAT = r"^arn:aws:states:(?P<region>[a-z0-9-]+):(?P<account_id>[0-9]+):stateMachine:(?P<name>[a-zA-Z0-9-_]+)$"  # noqa: E501
+from acat.stepfunctions.exceptions import InvalidArnError
+
+MACHINE_ARN_FORMAT = r"^arn:aws:states:(?P<region>[a-z0-9-]+):(?P<account_id>[0-9]+):stateMachine:(?P<name>[a-zA-Z0-9-_]+)$"  # noqa: E501
+EXECUTION_ARN_FORMAT = r"^arn:aws:states:(?P<region>[a-z0-9-]+):(?P<account_id>[0-9]+):execution:(?P<name>[a-zA-Z0-9-_]+):(?P<id>[a-f0-9-]+)$"  # noqa: E501
 
 
 def validate_arn(arn: str):
-    if not re.match(ARN_FORMAT, arn):
-        raise ValueError("Invalid ARN")
+    if not re.match(MACHINE_ARN_FORMAT, arn):
+        raise InvalidArnError(arn)
 
 
 def parse_datetime(date_time: str) -> datetime:
@@ -48,7 +51,7 @@ def parse_datetime(date_time: str) -> datetime:
     raise ValueError(f"Could not parse date time: {date_time}")
 
 
-def validate_dates(
+def get_dates(
     start_date: datetime | None = None,
     stop_date: datetime | None = None,
     max_days: int = 14,
@@ -101,11 +104,8 @@ def get_executions(
         list[ExecutionListItemTypeDef]: A list of executions.
     """
     logger.info(f"Getting executions for state machine {arn}")
-
-    if not validate_arn(arn):
-        raise ValueError("Invalid ARN format")
-
-    start_date, stop_date = validate_dates(start_date, stop_date)
+    validate_arn(arn)
+    start_date, stop_date = get_dates(start_date, stop_date)
     client: SFNClient = boto3.client("stepfunctions")
     page = 1
     executions: list[ExecutionListItemTypeDef] = []
