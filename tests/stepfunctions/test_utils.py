@@ -4,11 +4,11 @@ from datetime import timedelta
 
 import pytest
 
+from acat.stepfunctions.exceptions import InvalidArnError
 from acat.stepfunctions.utils import get_dates
 from acat.stepfunctions.utils import get_executions
 from acat.stepfunctions.utils import parse_datetime
 from acat.stepfunctions.utils import validate_arn
-from acat.stepfunctions.utils import validate_dates
 
 
 class TestValidateArn:
@@ -20,10 +20,10 @@ class TestValidateArn:
     def test_failure(self):
         arn = "arn:aws:states:us-west-2:123456789012:stateMachine:my-state-machine:my-execution"  # noqa E501
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InvalidArnError) as exc_info:
             validate_arn(arn)
 
-        assert str(exc_info.value) == "Invalid ARN"
+        assert str(exc_info.value) == f"Invalid ARN: {arn}"
 
 
 class TestParseDatetime:
