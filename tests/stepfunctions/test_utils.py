@@ -109,5 +109,30 @@ class TestValidateDates:
 
 
 class TestGetExecutions:
-    def test_success(self):
-        pass
+    def test_success(self, mock_state_machine: str):
+        executions = get_executions(mock_state_machine, status="RUNNING")
+
+        assert len(executions) > 0
+        for execution in executions:
+            assert execution["status"] == "RUNNING"
+
+    def test_success_failed_execution(self, mock_state_machine: str):
+        executions = get_executions(mock_state_machine, status="FAILED")
+
+        assert len(executions) == 0
+
+    def test_success_old_execution(self, mock_state_machine: str):
+        executions = get_executions(
+            mock_state_machine,
+            status="RUNNING",
+            stop_date=datetime.now(UTC) - timedelta(days=1),
+        )
+
+        assert len(executions) == 0
+
+    def test_success_too_new_execution(self, mock_state_machine: str):
+        executions = get_executions(
+            mock_state_machine, status="RUNNING", start_date=datetime.now(UTC)
+        )
+
+        assert len(executions) == 0

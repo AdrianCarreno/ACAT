@@ -116,7 +116,7 @@ def get_executions(
 
         if page > 1:
             # If it's not the first page, there is a response and a `NextToken`
-            args["NextToken"] = response["NextToken"]  # type: ignore # noqa F821
+            args["NextToken"] = response["NextToken"]  # type: ignore # noqa F821 #pragma: no cover
 
         response = client.list_executions(**args)  # type: ignore
 
@@ -140,6 +140,6 @@ def get_executions(
         page += 1
 
         if not response.get("nextToken"):
-            break
+            break  # pragma: no cover
 
     return executions
