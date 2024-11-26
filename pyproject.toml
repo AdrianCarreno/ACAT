@@ -55,7 +55,7 @@ known-first-party = ["acat"]
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]
-env = ["AWS_DEFAULT_REGION=us-east-1"]
+env = ["AWS_DEFAULT_REGION=us-east-1", "LOGURU_LOG_LEVEL=DEBUG"]
 
 [tool.coverage.run]
 branch = true

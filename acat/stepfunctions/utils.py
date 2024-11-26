@@ -63,10 +63,14 @@ def get_dates(
     if not start_date:
         logger.debug(f"Start date not provided, using '{max_age}'")
         start_date = max_age
+    else:
+        start_date = start_date.replace(tzinfo=UTC)
 
     if not stop_date:
         logger.debug(f"Stop date not provided, using '{now}'")
         stop_date = now
+    else:
+        stop_date = stop_date.replace(tzinfo=UTC)
 
     if not (max_age <= start_date <= stop_date <= now):
         raise ValueError(
