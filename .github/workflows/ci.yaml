@@ -6,68 +6,51 @@ on:
   pull_request:
     branches: [main]
 
-jobs:
-  install-deps:
-    runs-on: ubuntu-latest
-    container:
-      image: python:3.10
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Configure Poetry
-        run: poetry config virtualenvs.create false
-      - name: Set up Poetry cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/bin
-            /usr/local/lib/python3.10/site-packages
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Install dependencies using Poetry
-        run: poetry install --with dev,test
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   lint:
-    needs: install-deps
+    timeout-minutes: 1
     runs-on: ubuntu-latest
-    container:
-      image: python:3.10
     steps:
-      - name: Check out code
+      - name: Checkout GitHub Action
         uses: actions/checkout@v4
-      - name: Restore Poetry cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/bin
-            /usr/local/lib/python3.10/site-packages
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Lint code
-        run: ruff check .
+
+      - name: Install the latest version of ruff
+        uses: astral-sh/ruff-action@v3
+
       - name: Check formatting
-        run: ruff format --check .
+        run: ruff format --check
+
+      - name: Check linting
+        run: ruff check
 
   test:
-    needs: install-deps
+    name: test
+    timeout-minutes: 5
     runs-on: ubuntu-latest
-    container:
-      image: python:3.10
+    strategy:
+      matrix:
+        python-version:
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
     steps:
-      - name: Check out code
+      - name: Checkout GitHub Action
         uses: actions/checkout@v4
-      - name: Restore Poetry cache
-        uses: actions/cache@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
         with:
-          path: |
-            /usr/local/bin
-            /usr/local/lib/python3.10/site-packages
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Run tests and generate coverage report
-        run: pytest --cov
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: '**/uv.lock'
+
+      - name: Install project dependencies
+        run: uv sync --frozen --group test
+
+      - name: Run tests
+        run: uv run pytest --cov
