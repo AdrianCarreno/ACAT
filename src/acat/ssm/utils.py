@@ -7,7 +7,7 @@ from loguru import logger
 from mypy_boto3_ssm import SSMClient
 from mypy_boto3_ssm.type_defs import ParameterStringFilterTypeDef
 
-from .types import Parameter
+from acat.ssm.types import Parameter
 
 MATCH_STR = r"\{\{ ?resolve:ssm:\/\$\{AWS::StackName\}(\/.+) ?\}\+?\}"
 

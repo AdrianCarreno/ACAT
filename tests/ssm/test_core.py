@@ -1,8 +1,7 @@
 from acat.ssm.core import copy
 from acat.ssm.core import delete_unused
 from acat.ssm.utils import get_ssm_parameter_names
-
-from ..conftest import BaseTest
+from tests.conftest import BaseTest
 
 
 class TestDeleteUnused(BaseTest):
