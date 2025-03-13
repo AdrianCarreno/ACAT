@@ -2,10 +2,10 @@ import boto3
 import click
 from loguru import logger
 
-from .types import Parameter
-from .utils import get_current_params
-from .utils import get_ssm_parameter_names
-from .utils import get_ssm_parameters
+from acat.ssm.types import Parameter
+from acat.ssm.utils import get_current_params
+from acat.ssm.utils import get_ssm_parameter_names
+from acat.ssm.utils import get_ssm_parameters
 
 
 @click.group()
