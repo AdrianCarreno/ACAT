@@ -16,6 +16,7 @@ dependencies = [
     { name = "click" },
     { name = "loguru" },
     { name = "mypy-boto3-ssm" },
+    { name = "six" },
 ]
 
 [package.dev-dependencies]
@@ -40,6 +41,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "mypy-boto3-ssm", specifier = ">=1.37.4" },
+    { name = "six", specifier = ">=1.17.0" },
 ]
 
 [package.metadata.requires-dev]
