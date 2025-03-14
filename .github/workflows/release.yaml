@@ -1,6 +1,6 @@
 on:
   push:
-    # branches: [main]
+    branches: [main]
 
 name: Create Release
 
@@ -24,7 +24,9 @@ jobs:
 
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=version::$(grep -Po 'version = "\K.+(?=")' pyproject.toml)
+        run: |
+          version=$(grep -Po 'version = "\K.+(?=")' pyproject.toml)
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Create a Release
         uses: softprops/action-gh-release@v2
