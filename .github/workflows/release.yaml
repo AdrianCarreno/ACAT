@@ -22,9 +22,15 @@ jobs:
       - name: Build the project
         run: uv build
 
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=version::$(grep -Po 'version = "\K.+(?=")' pyproject.toml)
+
       - name: Create a Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
+          tag_name: v${{ steps.get_version.outputs.version }}
           generate_release_notes: true
           files: ./dist/*
