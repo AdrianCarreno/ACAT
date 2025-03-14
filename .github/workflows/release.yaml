@@ -1,0 +1,38 @@
+on:
+  push:
+    branches: [main]
+
+name: Create Release
+
+jobs:
+  build:
+    name: Create Rlease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.13'
+
+      - name: Build the project
+        run: uv build
+
+      - name: Get the version
+        id: get_version
+        run: |
+          version=$(grep -Po 'version = "\K.+(?=")' pyproject.toml)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Create a Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          generate_release_notes: true
+          files: ./dist/*
