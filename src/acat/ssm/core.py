@@ -6,6 +6,7 @@ import click
 
 from acat.logger import logger
 from acat.ssm.types import Parameter
+from acat.ssm.utils import create_ssm_parameters
 from acat.ssm.utils import get_current_params
 from acat.ssm.utils import get_ssm_parameter_names
 from acat.ssm.utils import get_ssm_parameters
@@ -101,7 +102,6 @@ def copy(source: str, destination: str, overwrite: bool, replace: Optional[str])
     overwritten depending on the value of the `overwrite` flag.
     """
     logger.info(f"Copying parameters from {source} to {destination}")
-    client = boto3.client("ssm")
 
     source_params = get_ssm_parameters(source)
     logger.debug(f"Found {len(source_params)} parameters in {source}")
@@ -155,6 +155,4 @@ def copy(source: str, destination: str, overwrite: bool, replace: Optional[str])
         click.echo("Aborted")
         exit(1)
 
-    for parameter in new_params:
-        click.echo(f"Creating parameter: {parameter['Name']}")
-        client.put_parameter(Overwrite=overwrite, **parameter)
+    create_ssm_parameters(new_params, overwrite)

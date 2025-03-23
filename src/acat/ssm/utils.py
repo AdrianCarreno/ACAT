@@ -1,8 +1,10 @@
+import concurrent.futures
 import re
 from typing import Sequence
 from typing import Set
 
 import boto3
+import click
 from mypy_boto3_ssm import SSMClient
 from mypy_boto3_ssm.type_defs import ParameterStringFilterTypeDef
 
@@ -73,20 +75,56 @@ def get_ssm_parameters(path_preffix: str) -> list[Parameter]:
     parameter_names = get_ssm_parameter_names(path_preffix)
     parameters: list[Parameter] = []
 
-    for name in parameter_names:
-        full_param = client.get_parameter(Name=name)["Parameter"]
-        if (
-            "Name" not in full_param
-            or "Value" not in full_param
-            or "Type" not in full_param
-        ):  # pragma: no cover
-            logger.warning(f"Parameter {full_param} does not have all required fields")
-            continue
-        parameter: Parameter = {
-            "Name": full_param["Name"],
-            "Value": full_param["Value"],
-            "Type": full_param["Type"],
-        }
-        parameters.append(parameter)
+    def fetch_parameter(name: str) -> Parameter | None:
+        try:
+            full_param = client.get_parameter(Name=name)["Parameter"]
+            if (
+                "Name" not in full_param
+                or "Value" not in full_param
+                or "Type" not in full_param
+            ):  # pragma: no cover
+                logger.warning(
+                    f"Parameter {full_param} does not have all required fields"
+                )
+                return None
+            parameter: Parameter = {
+                "Name": full_param["Name"],
+                "Value": full_param["Value"],
+                "Type": full_param["Type"],
+            }
+            return parameter
+        except Exception as e:  # pragma: no cover
+            logger.error(f"Error fetching parameter {name}: {e}")
+            return None
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fetch_parameter, name) for name in parameter_names]
+
+        for future in concurrent.futures.as_completed(futures):
+            parameter = future.result()
+
+            if parameter:
+                parameters.append(parameter)
 
     return parameters
+
+
+def create_ssm_parameters(parameters: Sequence[Parameter], overwrite: bool) -> None:
+    """Create SSM parameters in parallel."""
+    client = boto3.client("ssm")
+
+    def create_parameter(parameter: Parameter, overwrite: bool):
+        try:
+            click.echo(f"Creating parameter: {parameter['Name']}")
+            client.put_parameter(Overwrite=overwrite, **parameter)
+        except Exception as e:  # pragma: no cover
+            click.echo(f"Error creating parameter {parameter['Name']}: {e}")
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(create_parameter, parameter, overwrite)
+            for parameter in parameters
+        ]
+        for future in concurrent.futures.as_completed(futures):
+            # Raise any exceptions that occurred during parameter creation
+            future.result()
