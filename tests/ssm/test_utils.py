@@ -102,7 +102,7 @@ class FakeSSMClient:
         self.raise_error = raise_error
         self.lock = threading.Lock()
 
-    def put_parameter(self, Overwrite, **parameter):
+    def put_parameter(self, Overwrite, **parameter):  # noqa N803
         with self.lock:
             if self.raise_error:
                 raise Exception("test error")
@@ -144,7 +144,8 @@ def test_create_ssm_parameters_success(fake_ssm_client, captured_click_echo):
 
     create_ssm_parameters(parameters, overwrite)
 
-    # check that for each parameter, put_parameter was called and the echo message was printed
+    # Check that for each parameter, 'put_parameter' was called and the echo
+    # message was printed
     assert len(fake_ssm_client.put_param_calls) == len(parameters)
 
     for call in fake_ssm_client.put_param_calls:
