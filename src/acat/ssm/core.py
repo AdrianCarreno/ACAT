@@ -1,3 +1,6 @@
+import re
+from typing import Optional
+
 import boto3
 import click
 
@@ -81,7 +84,16 @@ def delete_unused(path_preffix: str, template_path: str):
     show_default=True,
     help="Overwrite existing parameters",
 )
-def copy(source: str, destination: str, overwrite: bool):
+@click.option(
+    "--replace",
+    "-r",
+    default=None,
+    help=(
+        "Replace a parameter value using regular expressions. "
+        "The format is 's/old/new/'."
+    ),
+)
+def copy(source: str, destination: str, overwrite: bool, replace: Optional[str]):
     """Recursively copy all SSM parameters from a path to another path.
 
     This script will copy all SSM parameters from the source path to the
@@ -97,6 +109,19 @@ def copy(source: str, destination: str, overwrite: bool):
     logger.debug(f"Found {len(dest_param_names)} parameters in {destination}")
     new_params: list[Parameter] = []
 
+    if replace:
+        match_group = re.match(r"^s/(?P<old>.*)/(?P<new>.*)/$", replace)
+
+        if not match_group:
+            click.echo("Invalid replace format")
+            exit(1)
+
+        logger.debug(
+            f"Replacing {match_group.group('old')} with {match_group.group('new')}"
+        )
+    else:
+        match_group = None
+
     for parameter in source_params:
         new_name = parameter["Name"].replace(source, destination)
 
@@ -104,9 +129,16 @@ def copy(source: str, destination: str, overwrite: bool):
             logger.debug(f"Parameter {new_name} already exists, skipping")
             continue
 
-        new_params.append(
-            {"Name": new_name, "Value": parameter["Value"], "Type": parameter["Type"]}
-        )
+        value = parameter["Value"]
+        if match_group:
+            old_value = parameter["Value"]
+            value = re.sub(match_group.group("old"), match_group.group("new"), value)
+            logger.info(
+                f"Parameter '{parameter['Name']}' with value '{old_value}'"
+                f" will become '{new_name}' with value '{value}'"
+            )
+
+        new_params.append({"Name": new_name, "Value": value, "Type": parameter["Type"]})
 
     if len(new_params) == 0:
         click.echo("No parameters to copy")
