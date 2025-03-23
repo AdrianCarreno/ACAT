@@ -84,8 +84,25 @@ class TestCopy(BaseTest):
         assert result.exit_code == 1
         assert "Aborted" in result.output
 
-    def test_fail_without_providing_path_preffix(self):
+    def test_fail_without_providing_destination(self):
         result = self.runner.invoke(copy, ["/test1"])
 
         assert result.exit_code == 2
-        assert "Error: Missing argument 'DESTINATION'." in result.output
+        assert "Error: Missing argument 'DESTINATION'" in result.output
+
+    def test_success_replace(self, source="/test1", destination="/test2"):
+        # Assume the source parameters contain the string "old" in their value.
+        result = self.runner.invoke(
+            copy, [source, destination, "--replace", "s/old/new/"], input="y\n"
+        )
+
+        assert result.exit_code == 0
+        assert "Creating parameter:" in result.output
+
+    def test_fail_invalid_replace_format(self, source="/test1", destination="/test2"):
+        result = self.runner.invoke(
+            copy, [source, destination, "--replace", "invalidformat"], input="y\n"
+        )
+
+        assert result.exit_code == 1
+        assert "Invalid replace format" in result.output

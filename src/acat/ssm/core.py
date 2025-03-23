@@ -1,8 +1,12 @@
+import re
+from typing import Optional
+
 import boto3
 import click
-from loguru import logger
 
+from acat.logger import logger
 from acat.ssm.types import Parameter
+from acat.ssm.utils import create_ssm_parameters
 from acat.ssm.utils import get_current_params
 from acat.ssm.utils import get_ssm_parameter_names
 from acat.ssm.utils import get_ssm_parameters
@@ -81,7 +85,16 @@ def delete_unused(path_preffix: str, template_path: str):
     show_default=True,
     help="Overwrite existing parameters",
 )
-def copy(source: str, destination: str, overwrite: bool):
+@click.option(
+    "--replace",
+    "-r",
+    default=None,
+    help=(
+        "Replace a parameter value using regular expressions. "
+        "The format is 's/old/new/'."
+    ),
+)
+def copy(source: str, destination: str, overwrite: bool, replace: Optional[str]):
     """Recursively copy all SSM parameters from a path to another path.
 
     This script will copy all SSM parameters from the source path to the
@@ -89,13 +102,25 @@ def copy(source: str, destination: str, overwrite: bool):
     overwritten depending on the value of the `overwrite` flag.
     """
     logger.info(f"Copying parameters from {source} to {destination}")
-    client = boto3.client("ssm")
 
     source_params = get_ssm_parameters(source)
     logger.debug(f"Found {len(source_params)} parameters in {source}")
     dest_param_names = get_ssm_parameter_names(destination)
     logger.debug(f"Found {len(dest_param_names)} parameters in {destination}")
     new_params: list[Parameter] = []
+
+    if replace:
+        match_group = re.match(r"^s/(?P<old>.*)/(?P<new>.*)/$", replace)
+
+        if not match_group:
+            click.echo("Invalid replace format")
+            exit(1)
+
+        logger.debug(
+            f"Replacing {match_group.group('old')} with {match_group.group('new')}"
+        )
+    else:
+        match_group = None
 
     for parameter in source_params:
         new_name = parameter["Name"].replace(source, destination)
@@ -104,9 +129,16 @@ def copy(source: str, destination: str, overwrite: bool):
             logger.debug(f"Parameter {new_name} already exists, skipping")
             continue
 
-        new_params.append(
-            {"Name": new_name, "Value": parameter["Value"], "Type": parameter["Type"]}
-        )
+        value = parameter["Value"]
+        if match_group:
+            old_value = parameter["Value"]
+            value = re.sub(match_group.group("old"), match_group.group("new"), value)
+            logger.info(
+                f"Parameter '{parameter['Name']}' with value '{old_value}'"
+                f" will become '{new_name}' with value '{value}'"
+            )
+
+        new_params.append({"Name": new_name, "Value": value, "Type": parameter["Type"]})
 
     if len(new_params) == 0:
         click.echo("No parameters to copy")
@@ -123,6 +155,4 @@ def copy(source: str, destination: str, overwrite: bool):
         click.echo("Aborted")
         exit(1)
 
-    for parameter in new_params:
-        click.echo(f"Creating parameter: {parameter['Name']}")
-        client.put_parameter(Overwrite=overwrite, **parameter)
+    create_ssm_parameters(new_params, overwrite)
