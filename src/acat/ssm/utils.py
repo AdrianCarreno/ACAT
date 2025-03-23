@@ -3,10 +3,10 @@ from typing import Sequence
 from typing import Set
 
 import boto3
-from loguru import logger
 from mypy_boto3_ssm import SSMClient
 from mypy_boto3_ssm.type_defs import ParameterStringFilterTypeDef
 
+from acat.logger import logger
 from acat.ssm.types import Parameter
 
 MATCH_STR = r"\{\{ ?resolve:ssm:\/\$\{AWS::StackName\}(\/.+) ?\}\+?\}"

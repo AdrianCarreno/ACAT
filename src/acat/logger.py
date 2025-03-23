@@ -11,7 +11,7 @@ class PropagateHandler(logging.Handler):
 
 
 # Re-add the stderr handler with the appropriate level
-log_level = os.getenv("LOG_LEVEL", logging.WARNING)
+log_level = os.getenv("LOG_LEVEL", logging.INFO)
 logger.remove()
 logger.add(sys.stderr, level=log_level)
 
