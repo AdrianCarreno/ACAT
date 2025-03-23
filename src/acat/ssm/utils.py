@@ -48,7 +48,10 @@ def get_ssm_parameter_names(path_preffix: str) -> set[str]:
 
     while True:
         logger.debug(f"Getting parameters page {i:02d}")
-        args = {"ParameterFilters": parameter_filters}
+        args = {
+            "MaxResults": 50,  # AWS maximum allowed value
+            "ParameterFilters": parameter_filters,
+        }
 
         if i > 1:
             # If it's not the first page, there is a response and a `NextToken`
