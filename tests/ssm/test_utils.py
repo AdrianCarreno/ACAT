@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from acat.ssm.utils import get_current_params
@@ -15,18 +17,22 @@ class TestGetCurrentParams:
             assert param.startswith(path_preffix)
 
     def test_fail_template_file_invalid_type(self, path_preffix="/test1"):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(
+            ValueError,
+            match=re.escape("Template file must have .yaml or .yml extension"),
+        ):
             get_current_params("wrong_extension.txt", path_preffix)
-
-        assert str(exc_info.value) == "Template file must have .yaml or .yml extension"
 
     def test_fail_template_file_not_found(
         self, missing_template: str, path_preffix="/test1"
     ):
-        with pytest.raises(FileNotFoundError) as exc_info:
+        with pytest.raises(
+            FileNotFoundError,
+            match=re.escape(
+                f"[Errno 2] No such file or directory: '{missing_template}'"
+            ),
+        ):
             get_current_params(missing_template, path_preffix)
-
-        assert str(exc_info.value) == f"[Errno 2] No such file or directory: '{missing_template}'"  # noqa E501 # fmt: skip
 
     def test_fail_template_file_invalid_content(
         self, template_file_invalid_content: str, path_preffix="/test1"
@@ -51,10 +57,13 @@ class TestGetSsmParameterNames:
         assert len(names) == 0
 
     def test_fail_without_path_preffix(self):
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "get_ssm_parameter_names() missing 1 required positional argument: 'path_preffix'"  # noqa E501
+            ),
+        ):
             get_ssm_parameter_names()  # type:ignore
-
-        assert str(exc_info.value) == "get_ssm_parameter_names() missing 1 required positional argument: 'path_preffix'"  # noqa E501 # fmt: skip
 
 
 class TestGetSsmParameters:
@@ -72,7 +81,10 @@ class TestGetSsmParameters:
         assert len(params) == 0
 
     def test_fail_without_path_preffix(self):
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "get_ssm_parameters() missing 1 required positional argument: 'path_preffix'"  # noqa E501
+            ),
+        ):
             get_ssm_parameters()  # type:ignore
-
-        assert str(exc_info.value) == "get_ssm_parameters() missing 1 required positional argument: 'path_preffix'"  # noqa E501 # fmt: skip
